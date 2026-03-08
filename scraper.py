@@ -44,7 +44,7 @@ def scrape_top_players():
                     "nombre": nombre,
                     "posicion": posicion,
                     "media": media,
-                    "foto": foto_url,
+                    "foto": foto_url,})
 
                     # Dentro de tu bucle de jugadores en scraper.py
 max_level = cols[4].text.strip() if len(cols) > 4 else "28"

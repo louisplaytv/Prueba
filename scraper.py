@@ -45,3 +45,17 @@ def scrape_top_players():
                     "posicion": posicion,
                     "media": media,
                     "foto": foto_url,
+
+                    # Dentro de tu bucle de jugadores en scraper.py
+max_level = cols[4].text.strip() if len(cols) > 4 else "28"
+puntos_progression = (int(max_level) - 1) * 2
+
+player_data = {
+    "nombre": nombre,
+    "media_base": int(media),
+    "media_max": int(media) + 4, # Estimación rápida (+4 o +5 es lo habitual)
+    "puntos_disponibles": puntos_progression,
+    "posicion": posicion,
+    "foto": foto_url,
+    "build": generar_build_pro(posicion) 
+}

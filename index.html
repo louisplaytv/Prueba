@@ -3,134 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eFootball HUB - Buscador de Entrenamiento</title>
+    <title>eFootball HUB Clone - Builder</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Kanit', sans-serif; background-color: #0d1117; color: #cbd5e1; }
-        .ef-card { background: #161d27; border: 1px solid #2d3748; transition: transform 0.2s, border-color 0.2s; }
-        .ef-card:hover { border-color: #38bdf8; transform: translateY(-3px); }
-        .stat-bar { height: 6px; background: #2d3748; border-radius: 3px; overflow: hidden; }
-        .stat-fill { height: 100%; background: #38bdf8; box-shadow: 0 0 8px #38bdf8; }
-        .rating-badge { background: linear-gradient(180deg, #fde047, #eab308); color: #000; }
-        /* Estilo del buscador */
-        #search-input::placeholder { color: #64748b; }
-        #search-input:focus { outline: 2px solid #38bdf8; border-color: transparent; }
+        body { background-color: #0b0f15; font-family: 'Roboto', sans-serif; color: #e2e8f0; }
+        .hub-card { background: #161d27; border: 1px solid #2d3748; transition: 0.2s; cursor: pointer; }
+        .hub-card:hover { border-color: #38bdf8; background: #1c2635; }
+        .rating-box { background: linear-gradient(180deg, #facc15, #ca8a04); color: #000; font-weight: 900; }
+        .stat-bar-bg { height: 4px; background: #2d3748; border-radius: 2px; }
+        .stat-bar-fill { height: 100%; background: #38bdf8; box-shadow: 0 0 8px #38bdf8; }
+        .pos-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+        /* Colores de posiciones oficiales */
+        .pos-cf { background: #e11d48; } .pos-rwf { background: #e11d48; }
+        .pos-amf { background: #2563eb; } .pos-cb { background: #16a34a; }
     </style>
 </head>
 <body>
 
-    <header class="bg-[#161d27] border-b border-blue-500/30 sticky top-0 z-50 shadow-2xl p-4">
+    <header class="bg-[#161d27] border-b border-blue-500/20 p-4 sticky top-0 z-50">
         <div class="container mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-2">
-                <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center font-black text-black text-xl shadow-[0_0_15px_rgba(59,130,246,0.5)]">H</div>
-                <h1 class="text-2xl font-black tracking-tighter text-white uppercase">eF-HUB <span class="text-blue-400">BUILDER</span></h1>
+                <span class="bg-blue-600 text-white px-2 py-1 rounded font-black text-xl">H</span>
+                <span class="text-xl font-black tracking-tighter uppercase">eFootball<span class="text-blue-500">HUB</span></span>
             </div>
             
-            <div class="relative w-full md:w-96">
-                <input type="text" id="search-input" placeholder="Buscar jugador por nombre..." 
-                    class="w-full bg-[#0d1117] border border-slate-700 text-white rounded-xl py-3 px-12 focus:ring-2 focus:ring-blue-500 transition-all">
-                <svg class="absolute left-4 top-3.5 h-5 w-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                </svg>
+            <div class="relative w-full md:w-1/2">
+                <input type="text" id="main-search" placeholder="Buscar jugadores (ej: Messi, Mbappe...)" 
+                    class="w-full bg-[#0b0f15] border border-slate-700 rounded-lg py-2 px-10 focus:border-blue-500 outline-none">
+                <span class="absolute left-3 top-2.5 text-slate-500">🔍</span>
             </div>
         </div>
     </header>
 
-    <main class="container mx-auto p-4 sm:p-8">
-        <div id="status-text" class="mb-4 text-xs font-bold text-slate-500 uppercase tracking-widest"></div>
-        
-        <div id="player-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <main class="container mx-auto p-4 md:p-8">
+        <div id="player-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             </div>
     </main>
 
     <script>
-        let allPlayers = []; // Almacén global de jugadores
+        let playersData = [];
 
-        // 1. CARGAR DATOS
-        async function loadData() {
+        async function fetchPlayers() {
             try {
-                const response = await fetch('players.json?v=' + Date.now());
-                allPlayers = await response.json();
-                renderPlayers(allPlayers);
-                document.getElementById('status-text').innerText = `${allPlayers.length} Jugadores Disponibles`;
-            } catch (error) {
-                console.error("Error cargando JSON:", error);
-                document.getElementById('player-grid').innerHTML = `
-                    <div class="col-span-full text-center p-10 border-2 border-dashed border-slate-800 rounded-3xl">
-                        <p class="text-red-400 font-bold">⚠️ Error: El archivo players.json no existe o está vacío.</p>
-                        <p class="text-slate-500 text-sm mt-2">Asegúrate de ejecutar el Scraper en GitHub Actions.</p>
-                    </div>`;
+                const res = await fetch('players.json?v=' + Date.now());
+                playersData = await res.json();
+                render(playersData);
+            } catch (e) {
+                console.error("Error cargando JSON");
+                document.getElementById('player-grid').innerHTML = "<p class='text-center col-span-full'>Ejecuta el Scraper en GitHub para ver datos.</p>";
             }
         }
 
-        // 2. RENDERIZAR CARTAS
-        function renderPlayers(players) {
+        function render(list) {
             const grid = document.getElementById('player-grid');
-            if (players.length === 0) {
-                grid.innerHTML = '<p class="col-span-full text-center py-20 text-slate-600 italic">No se encontraron resultados...</p>';
-                return;
-            }
-
-            grid.innerHTML = players.map(p => `
-                <div class="ef-card rounded-2xl overflow-hidden flex flex-col shadow-lg">
-                    <div class="relative h-48 bg-[#1c2431] flex items-center justify-center">
-                        <div class="absolute inset-0 opacity-5" style="background-image: radial-gradient(#38bdf8 1px, transparent 1px); background-size: 15px 15px;"></div>
-                        
-                        <img src="${p.foto}" alt="${p.nombre}" class="h-full object-contain z-10" onerror="this.src='https://www.konami.com/efootball/s/img/common/noimage_player.png'">
-                        
-                        <div class="absolute top-3 left-3 z-20">
-                            <div class="rating-badge font-black text-2xl w-14 h-14 flex items-center justify-center rounded-xl shadow-xl">${p.media}</div>
-                            <div class="bg-black/80 text-blue-400 text-[10px] font-black px-2 py-1 mt-1 rounded text-center border border-blue-500/30">${p.posicion}</div>
+            grid.innerHTML = list.map(p => `
+                <div class="hub-card rounded-lg overflow-hidden flex flex-col">
+                    <div class="relative h-40 bg-gradient-to-b from-[#1c2635] to-[#161d27]">
+                        <img src="${p.foto}" class="absolute bottom-0 left-1/2 -translate-x-1/2 h-[90%] object-contain z-10" onerror="this.src='https://www.konami.com/efootball/s/img/common/noimage_player.png'">
+                        <div class="absolute top-2 left-2 z-20">
+                            <div class="rating-box w-10 h-10 flex items-center justify-center rounded-md text-xl">${p.media}</div>
+                            <div class="pos-badge mt-1 text-center bg-black/50">${p.posicion}</div>
                         </div>
                     </div>
-
-                    <div class="p-5 flex-grow">
-                        <h3 class="text-white font-bold text-lg uppercase truncate mb-4 border-l-4 border-blue-500 pl-3">${p.nombre}</h3>
+                    
+                    <div class="p-4 flex-grow">
+                        <h3 class="font-bold text-sm uppercase truncate mb-4">${p.nombre}</h3>
                         
-                        <div class="space-y-4">
-                            ${statItem("TIRO", p.build.Tiro)}
-                            ${statItem("PASE", p.build.Pase)}
-                            ${statItem("DESTREZA", p.build.Destreza)}
-                            ${statItem("FUERZA", p.build.Fuerza)}
+                        <div class="space-y-3">
+                            ${buildStat("TIRO", p.build.Tiro)}
+                            ${buildStat("PASE", p.build.Pase)}
+                            ${buildStat("DESTREZA", p.build.Destreza)}
+                            ${buildStat("FUERZA", p.build.Fuerza)}
                         </div>
-                    </div>
-
-                    <div class="p-4 bg-slate-900/50 border-t border-slate-800">
-                        <button class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-lg text-xs uppercase tracking-widest transition-colors shadow-lg shadow-blue-900/20">
-                            Copiar Build Pro
+                        
+                        <button class="w-full mt-4 bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white text-[10px] font-bold py-2 rounded transition uppercase tracking-tighter">
+                            Ver Progresión Completa
                         </button>
                     </div>
                 </div>
             `).join('');
         }
 
-        function statItem(label, val) {
-            const width = Math.min((val / 15) * 100, 100); // 15 es el tope visual
+        function buildStat(label, value) {
+            const perc = (value / 12) * 100;
             return `
-                <div class="flex flex-col gap-1.5">
-                    <div class="flex justify-between items-center text-[11px] font-black">
-                        <span class="text-slate-500 tracking-tighter">${label}</span>
-                        <span class="text-blue-400 font-mono text-sm">+${val}</span>
+                <div>
+                    <div class="flex justify-between text-[10px] font-bold mb-1">
+                        <span class="text-slate-500">${label}</span>
+                        <span class="text-blue-400">+${value}</span>
                     </div>
-                    <div class="stat-bar">
-                        <div class="stat-fill" style="width: ${width}%"></div>
+                    <div class="stat-bar-bg">
+                        <div class="stat-bar-fill" style="width: ${perc}%"></div>
                     </div>
                 </div>`;
         }
 
-        // 3. LÓGICA DEL BUSCADOR
-        document.getElementById('search-input').addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase().trim();
-            const filtered = allPlayers.filter(p => 
-                p.nombre.toLowerCase().includes(term) || 
-                p.posicion.toLowerCase().includes(term)
-            );
-            renderPlayers(filtered);
+        // Buscador instantáneo
+        document.getElementById('main-search').addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            const filtered = playersData.filter(p => p.nombre.toLowerCase().includes(query));
+            render(filtered);
         });
 
-        // Iniciar carga
-        loadData();
+        fetchPlayers();
     </script>
 </body>
 </html>

@@ -1,1 +1,14 @@
-[]
+[
+    {
+        "nombre": "DATOS EN MANTENIMIENTO",
+        "posicion": "SVR",
+        "media": "99",
+        "foto": "",
+        "build": {
+            "Tiro": 0,
+            "Pase": 0,
+            "Destreza": 0,
+            "Fuerza": 0
+        }
+    }
+]

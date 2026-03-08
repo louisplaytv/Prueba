@@ -55,6 +55,28 @@
             }
         }
 
+        // Pesos simplificados para calcular la media (OVR)
+const pesosPosicion = {
+    "CF": { finalizacion: 0.2, actitudOfensiva: 0.15, velocidad: 0.1, potencia: 0.05 },
+    "CB": { defensa: 0.25, contactoFisico: 0.15, salto: 0.1, velocidad: 0.05 },
+    "AMF": { paseRaso: 0.2, controlBalon: 0.15, regate: 0.1, finalizacion: 0.05 }
+};
+
+function calcularMediaDinamica(statsBase, puntosAsignados, posicion) {
+    let sumaPonderada = 0;
+    const pesos = pesosPosicion[posicion] || pesosPosicion["CF"]; // Por defecto CF
+
+    // Simulamos el impacto de los puntos de progresión
+    // Cada punto asignado suele subir +2 o +3 en el stat específico
+    for (let stat in pesos) {
+        let valorFinal = statsBase[stat] + (puntosAsignados[stat] * 2);
+        sumaPonderada += valorFinal * pesos[stat];
+    }
+
+    // La base suele ser una constante (ej: 60) + la suma ponderada
+    return Math.round(65 + sumaPonderada);
+}
+        
         function render(list) {
             const grid = document.getElementById('player-grid');
             grid.innerHTML = list.map(p => `

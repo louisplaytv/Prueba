@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>eFootball Auto-Builds</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white font-sans">
+    <nav class="p-4 border-b border-yellow-500 bg-slate-800 flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-yellow-400 italic">eF-BUILDER BOT</h1>
+        <span class="bg-green-600 text-[10px] px-2 py-1 rounded-full animate-pulse">AUTO-UPDATE</span>
+    </nav>
+
+    <main class="container mx-auto p-6">
+        <div id="player-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            </div>
+    </main>
+
+    <script>
+        async function cargarJugadores() {
+            try {
+                const res = await fetch('players.json');
+                const datos = await res.json();
+                const grid = document.getElementById('player-grid');
+                grid.innerHTML = datos.map(p => `
+                    <div class="bg-slate-800 rounded-xl overflow-hidden border border-slate-700 p-4 shadow-xl">
+                        <div class="text-center">
+                            <h3 class="font-black text-xl text-yellow-500">${p.nombre}</h3>
+                            <p class="text-slate-400 text-sm mb-4">${p.posicion} | Media: ${p.media}</p>
+                            <div class="grid grid-cols-2 gap-2 text-xs font-mono bg-slate-900 p-3 rounded-lg">
+                                <div class="text-left">TIRO: <span class="text-green-400">+${p.build.Tiro}</span></div>
+                                <div class="text-left">PASE: <span class="text-green-400">+${p.build.Pase}</span></div>
+                                <div class="text-left">DESTREZA: <span class="text-green-400">+${p.build.Destreza}</span></div>
+                                <div class="text-left">FUERZA: <span class="text-green-400">+${p.build.Fuerza}</span></div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) { console.error("Aún no hay datos generados."); }
+        }
+        cargarJugadores();
+    </script>
+</body>
+</html>

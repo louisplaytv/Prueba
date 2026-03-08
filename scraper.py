@@ -3,7 +3,6 @@ from bs4 import BeautifulSoup
 import json
 
 def generar_build_pro(posicion):
-    # Lógica de entrenamiento optimizada tipo HUB
     builds = {
         "CF": {"Tiro": 10, "Pase": 0, "Destreza": 12, "Fuerza": 8},
         "RWF": {"Tiro": 8, "Pase": 6, "Destreza": 12, "Fuerza": 4},
@@ -12,20 +11,22 @@ def generar_build_pro(posicion):
         "CB": {"Tiro": 0, "Pase": 2, "Destreza": 4, "Fuerza": 12},
         "GK": {"Tiro": 0, "Pase": 0, "Destreza": 0, "Fuerza": 0}
     }
-    return builds.get(posicion, {"Tiro": 5, "Pase": 5, "Destreza": 5, "Fuerza": 5})
+    return builds.get(posicion, {"Tiro": 4, "Pase": 4, "Destreza": 4, "Fuerza": 4})
 
 def scrape_top_players():
-    # Cambiamos la URL a la lista de jugadores con mejor media
     url = "https://www.efootballdb.com/players?sort=overall_max&order=desc"
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
     
     try:
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=15)
         soup = BeautifulSoup(response.text, 'html.parser')
         jugadores = []
         
-        # Buscamos las filas de la tabla
-        rows = soup.select('table.table-sorted tr')[1:31] # Traemos los mejores 30
+        table = soup.find('table')
+        if not table:
+            return []
+
+        rows = table.find_all('tr')[1:31] # Traemos los mejores 30
         
         for row in rows:
             cols = row.find_all('td')
@@ -34,7 +35,6 @@ def scrape_top_players():
                 posicion = cols[2].text.strip()
                 media = cols[3].text.strip()
                 
-                # Extraer foto
                 img = cols[0].find('img')
                 foto_url = img.get('data-src') or img.get('src') if img else ""
                 if foto_url and foto_url.startswith('/'):
@@ -44,18 +44,17 @@ def scrape_top_players():
                     "nombre": nombre,
                     "posicion": posicion,
                     "media": media,
-                    "foto": foto_url,})
+                    "foto": foto_url,
+                    "build": generar_build_pro(posicion)
+                })
+        return jugadores
+    except Exception as e:
+        print(f"Error en el scraping: {e}")
+        return []
 
-                    # Dentro de tu bucle de jugadores en scraper.py
-max_level = cols[4].text.strip() if len(cols) > 4 else "28"
-puntos_progression = (int(max_level) - 1) * 2
-
-player_data = {
-    "nombre": nombre,
-    "media_base": int(media),
-    "media_max": int(media) + 4, # Estimación rápida (+4 o +5 es lo habitual)
-    "puntos_disponibles": puntos_progression,
-    "posicion": posicion,
-    "foto": foto_url,
-    "build": generar_build_pro(posicion) 
-}
+# Ejecución principal
+if __name__ == "__main__":
+    datos = scrape_top_players()
+    with open('players.json', 'w', encoding='utf-8') as f:
+        json.dump(datos, f, indent=4, ensure_ascii=False)
+    print(f"¡Hecho! Guardados {len(datos)} jugadores.")

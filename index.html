@@ -3,113 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eFootball HUB Clone - Auto Builds</title>
+    <title>eFootball HUB - Buscador de Entrenamiento</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Kanit', sans-serif; background-color: #0d1117; }
-        .efhub-gradient { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
-        .player-card { background: #161d27; border: 1px solid #2d3748; transition: all 0.2s; }
-        .player-card:hover { border-color: #38bdf8; transform: scale(1.02); }
+        body { font-family: 'Kanit', sans-serif; background-color: #0d1117; color: #cbd5e1; }
+        .ef-card { background: #161d27; border: 1px solid #2d3748; transition: transform 0.2s, border-color 0.2s; }
+        .ef-card:hover { border-color: #38bdf8; transform: translateY(-3px); }
         .stat-bar { height: 6px; background: #2d3748; border-radius: 3px; overflow: hidden; }
-        .stat-fill { height: 100%; background: #38bdf8; box-shadow: 0 0 10px #38bdf8; }
-        .rating-badge { background: linear-gradient(to bottom, #fde047, #eab308); color: black; }
+        .stat-fill { height: 100%; background: #38bdf8; box-shadow: 0 0 8px #38bdf8; }
+        .rating-badge { background: linear-gradient(180deg, #fde047, #eab308); color: #000; }
+        /* Estilo del buscador */
+        #search-input::placeholder { color: #64748b; }
+        #search-input:focus { outline: 2px solid #38bdf8; border-color: transparent; }
     </style>
 </head>
-<body class="text-slate-200">
+<body>
 
-    <header class="bg-[#161d27] border-b border-blue-500/30 p-4 sticky top-0 z-50 shadow-2xl">
-        <div class="container mx-auto flex justify-between items-center">
+    <header class="bg-[#161d27] border-b border-blue-500/30 sticky top-0 z-50 shadow-2xl p-4">
+        <div class="container mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-2">
-                <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center font-black text-black">H</div>
-                <h1 class="text-xl font-black tracking-tighter text-white">eFootball<span class="text-blue-400">HUB</span> <span class="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded ml-2 italic">AUTO-BUILD</span></h1>
+                <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center font-black text-black text-xl shadow-[0_0_15px_rgba(59,130,246,0.5)]">H</div>
+                <h1 class="text-2xl font-black tracking-tighter text-white uppercase">eF-HUB <span class="text-blue-400">BUILDER</span></h1>
             </div>
-            <div class="text-xs text-slate-400 hidden sm:block">
-                Última actualización: <span id="update-time" class="text-blue-400 font-bold">Hoy</span>
+            
+            <div class="relative w-full md:w-96">
+                <input type="text" id="search-input" placeholder="Buscar jugador por nombre..." 
+                    class="w-full bg-[#0d1117] border border-slate-700 text-white rounded-xl py-3 px-12 focus:ring-2 focus:ring-blue-500 transition-all">
+                <svg class="absolute left-4 top-3.5 h-5 w-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
             </div>
         </div>
     </header>
 
-    <div class="bg-[#0d1117] p-2 border-b border-slate-800 overflow-x-auto whitespace-nowrap">
-        <div class="container mx-auto flex gap-4 text-xs font-bold px-4">
-            <button class="text-blue-400 border-b-2 border-blue-400 pb-1">TODOS LOS JUGADORES</button>
-            <button class="text-slate-500 hover:text-white transition">DESTACADOS</button>
-            <button class="text-slate-500 hover:text-white transition">EPIC</button>
-        </div>
-    </div>
-
-    <main class="container mx-auto p-4 sm:p-6">
-        <div id="player-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            <div class="col-span-full text-center py-20">
-                <div class="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
-                <p class="mt-4 text-slate-500">Buscando nuevos fichajes...</p>
+    <main class="container mx-auto p-4 sm:p-8">
+        <div id="status-text" class="mb-4 text-xs font-bold text-slate-500 uppercase tracking-widest"></div>
+        
+        <div id="player-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             </div>
-        </div>
     </main>
 
     <script>
-        async function cargarJugadores() {
+        let allPlayers = []; // Almacén global de jugadores
+
+        // 1. CARGAR DATOS
+        async function loadData() {
             try {
-                const res = await fetch('players.json?v=' + Date.now());
-                const datos = await res.json();
-                const grid = document.getElementById('player-grid');
-                
-                if (datos.length === 0) {
-                    grid.innerHTML = '<p class="col-span-full text-center text-slate-500">No hay datos. Ejecuta el Scraper en GitHub.</p>';
-                    return;
-                }
-
-                grid.innerHTML = datos.map(p => `
-                    <div class="player-card rounded-lg overflow-hidden flex flex-col relative">
-                        <div class="relative h-44 bg-[#1c2431] overflow-hidden">
-                            <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(#38bdf8 1px, transparent 1px); background-size: 10px 10px;"></div>
-                            
-                            <img src="${p.foto}" class="absolute bottom-0 left-1/2 -translate-x-1/2 h-full object-cover z-10" onerror="this.src='https://www.konami.com/efootball/s/img/common/noimage_player.png'">
-                            
-                            <div class="absolute top-2 left-2 z-20 flex flex-col items-center">
-                                <div class="rating-badge font-black text-2xl w-12 h-12 flex items-center justify-center rounded-lg shadow-lg border-b-2 border-black/20">${p.media}</div>
-                                <div class="bg-black text-white text-[10px] font-bold px-2 py-0.5 mt-1 rounded uppercase">${p.posicion}</div>
-                            </div>
-                        </div>
-
-                        <div class="p-3">
-                            <h2 class="font-bold text-base uppercase truncate text-white border-l-4 border-blue-500 pl-2 mb-3">${p.nombre}</h2>
-                            
-                            <div class="space-y-3">
-                                ${generarStatRow("TIRO", p.build.Tiro)}
-                                ${generarStatRow("PASE", p.build.Pase)}
-                                ${generarStatRow("DESTREZA", p.build.Destreza)}
-                                ${generarStatRow("FUERZA", p.build.Fuerza)}
-                            </div>
-
-                            <button class="w-full mt-4 bg-blue-600/10 hover:bg-blue-600 border border-blue-500/50 text-blue-400 hover:text-white text-[10px] font-bold py-2 rounded transition-all uppercase tracking-widest">
-                                Detalles del Entrenamiento
-                            </button>
-                        </div>
-                    </div>
-                `).join('');
-            } catch (e) {
-                console.error(e);
-                document.getElementById('player-grid').innerHTML = '<p class="col-span-full text-center text-red-400">Error al cargar el archivo players.json</p>';
+                const response = await fetch('players.json?v=' + Date.now());
+                allPlayers = await response.json();
+                renderPlayers(allPlayers);
+                document.getElementById('status-text').innerText = `${allPlayers.length} Jugadores Disponibles`;
+            } catch (error) {
+                console.error("Error cargando JSON:", error);
+                document.getElementById('player-grid').innerHTML = `
+                    <div class="col-span-full text-center p-10 border-2 border-dashed border-slate-800 rounded-3xl">
+                        <p class="text-red-400 font-bold">⚠️ Error: El archivo players.json no existe o está vacío.</p>
+                        <p class="text-slate-500 text-sm mt-2">Asegúrate de ejecutar el Scraper en GitHub Actions.</p>
+                    </div>`;
             }
         }
 
-        function generarStatRow(label, valor) {
-            const anchoBarra = (valor / 12) * 100; // Suponiendo que 12 es el máximo de puntos
-            return `
-                <div class="flex flex-col">
-                    <div class="flex justify-between text-[10px] font-bold mb-1">
-                        <span class="text-slate-400">${label}</span>
-                        <span class="text-blue-400">+${valor}</span>
+        // 2. RENDERIZAR CARTAS
+        function renderPlayers(players) {
+            const grid = document.getElementById('player-grid');
+            if (players.length === 0) {
+                grid.innerHTML = '<p class="col-span-full text-center py-20 text-slate-600 italic">No se encontraron resultados...</p>';
+                return;
+            }
+
+            grid.innerHTML = players.map(p => `
+                <div class="ef-card rounded-2xl overflow-hidden flex flex-col shadow-lg">
+                    <div class="relative h-48 bg-[#1c2431] flex items-center justify-center">
+                        <div class="absolute inset-0 opacity-5" style="background-image: radial-gradient(#38bdf8 1px, transparent 1px); background-size: 15px 15px;"></div>
+                        
+                        <img src="${p.foto}" alt="${p.nombre}" class="h-full object-contain z-10" onerror="this.src='https://www.konami.com/efootball/s/img/common/noimage_player.png'">
+                        
+                        <div class="absolute top-3 left-3 z-20">
+                            <div class="rating-badge font-black text-2xl w-14 h-14 flex items-center justify-center rounded-xl shadow-xl">${p.media}</div>
+                            <div class="bg-black/80 text-blue-400 text-[10px] font-black px-2 py-1 mt-1 rounded text-center border border-blue-500/30">${p.posicion}</div>
+                        </div>
                     </div>
-                    <div class="stat-bar">
-                        <div class="stat-fill" style="width: ${anchoBarra}%"></div>
+
+                    <div class="p-5 flex-grow">
+                        <h3 class="text-white font-bold text-lg uppercase truncate mb-4 border-l-4 border-blue-500 pl-3">${p.nombre}</h3>
+                        
+                        <div class="space-y-4">
+                            ${statItem("TIRO", p.build.Tiro)}
+                            ${statItem("PASE", p.build.Pase)}
+                            ${statItem("DESTREZA", p.build.Destreza)}
+                            ${statItem("FUERZA", p.build.Fuerza)}
+                        </div>
+                    </div>
+
+                    <div class="p-4 bg-slate-900/50 border-t border-slate-800">
+                        <button class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-lg text-xs uppercase tracking-widest transition-colors shadow-lg shadow-blue-900/20">
+                            Copiar Build Pro
+                        </button>
                     </div>
                 </div>
-            `;
+            `).join('');
         }
 
-        cargarJugadores();
+        function statItem(label, val) {
+            const width = Math.min((val / 15) * 100, 100); // 15 es el tope visual
+            return `
+                <div class="flex flex-col gap-1.5">
+                    <div class="flex justify-between items-center text-[11px] font-black">
+                        <span class="text-slate-500 tracking-tighter">${label}</span>
+                        <span class="text-blue-400 font-mono text-sm">+${val}</span>
+                    </div>
+                    <div class="stat-bar">
+                        <div class="stat-fill" style="width: ${width}%"></div>
+                    </div>
+                </div>`;
+        }
+
+        // 3. LÓGICA DEL BUSCADOR
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase().trim();
+            const filtered = allPlayers.filter(p => 
+                p.nombre.toLowerCase().includes(term) || 
+                p.posicion.toLowerCase().includes(term)
+            );
+            renderPlayers(filtered);
+        });
+
+        // Iniciar carga
+        loadData();
     </script>
 </body>
-</html>]
+</html>

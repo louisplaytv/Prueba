@@ -2,10 +2,10 @@ name: Actualizar Jugadores eFootball
 
 on:
   schedule:
-    - cron: '0 10 * * 4'
-  workflow_dispatch:
+    - cron: '0 10 * * 4' # Se ejecuta los jueves
+  workflow_dispatch: # Permite ejecutarlo manualmente (ESTO ES LO QUE NECESITAMOS AHORA)
 
-permissions:  # ESTO ES LO MÁS IMPORTANTE
+permissions:
   contents: write
 
 jobs:
@@ -21,7 +21,8 @@ jobs:
           python-version: '3.9'
 
       - name: Instalar dependencias
-        run: pip install requests beautifulsoup4
+        run: |
+          pip install requests beautifulsoup4
 
       - name: Ejecutar Scraper
         run: python scraper.py
@@ -31,5 +32,6 @@ jobs:
           git config --global user.name "GitHub Action"
           git config --global user.email "action@github.com"
           git add players.json
-          git commit -m "Auto-update players" || exit 0
+          # Si no hay cambios, no da error
+          git commit -m "Actualización automática de jugadores" || exit 0
           git push

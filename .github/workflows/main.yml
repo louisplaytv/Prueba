@@ -1,1 +1,35 @@
 
+name: Actualizar Jugadores eFootball
+
+on:
+  schedule:
+    # Se ejecuta todos los jueves a las 10:00 AM UTC (cuando sale la actualización)
+    - cron: '0 10 * * 4'
+  workflow_dispatch: # Permite ejecutarlo manualmente cuando quieras
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v3
+
+      - name: Configurar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Instalar dependencias
+        run: |
+          pip install requests beautifulsoup4
+
+      - name: Ejecutar Scraper
+        run: python scraper.py
+
+      - name: Guardar cambios en el JSON
+        run: |
+          git config --global user.name "eFootball-Bot"
+          git config --global user.email "bot@github.com"
+          git add players.json
+          git commit -m "Actualización automática de jugadores" || exit 0
+          git push
